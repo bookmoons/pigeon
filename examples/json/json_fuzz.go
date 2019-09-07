@@ -8,8 +8,17 @@ import (
 	"strings"
 )
 
-// Fuzz tests the JSON parser.
-func Fuzz(fuzz []byte) int {
+// FuzzSimple tests the JSON parser.
+func FuzzSimple(fuzz []byte) int {
+	_, err := Parse("fuzz", fuzz)
+	if err != nil {
+		return 0
+	}
+	return 1
+}
+
+// FuzzStandard tests the JSON parser against the standard library parser.
+func FuzzStandard(fuzz []byte) int {
 	var expected interface{}
 	expectedErr := json.Unmarshal(fuzz, &expected)
 	result, err := Parse("fuzz", fuzz)
