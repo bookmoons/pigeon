@@ -10,7 +10,7 @@ import (
 // Fuzz tests the JSON parser.
 func Fuzz(fuzz []byte) int {
 	var expected interface{}
-	expectedErr := json.Unmarshal(fuzz, expected)
+	expectedErr := json.Unmarshal(fuzz, &expected)
 	result, err := Parse("fuzz", fuzz)
 	if err != nil {
 		if expectedErr == nil {
