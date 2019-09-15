@@ -5,6 +5,7 @@ package json
 import (
 	"encoding/json"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -19,6 +20,13 @@ func FuzzSimple(fuzz []byte) int {
 
 // FuzzStandard tests the JSON parser against the standard library parser.
 func FuzzStandard(fuzz []byte) int {
+	exclude, err := excludeFuzz(fuzz)
+	if err != nil {
+		panic(err)
+	}
+	if exclude {
+		return -1
+	}
 	var expected interface{}
 	expectedErr := json.Unmarshal(fuzz, &expected)
 	result, err := Parse("fuzz", fuzz)
@@ -37,4 +45,9 @@ func FuzzStandard(fuzz []byte) int {
 		panic("unexpected result")
 	}
 	return 1
+}
+
+func excludeFuzz(fuzz []byte) (exclude bool, err error) {
+	exclude, err = regexp.Match(`\\u[dD][89a-f-AF][0-9a-fA-F]{2}`, fuzz)
+	return
 }
