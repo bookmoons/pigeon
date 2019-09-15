@@ -7,10 +7,13 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	optimizedParser "github.com/mna/pigeon/examples/json/optimized"
+	optimizedGrammar "github.com/mna/pigeon/examples/json/optimized-grammar"
 )
 
-// FuzzSimple tests the JSON parser.
-func FuzzSimple(fuzz []byte) int {
+// FuzzUnoptimized tests the unoptimized JSON parser.
+func FuzzUnoptimized(fuzz []byte) int {
 	_, err := Parse("fuzz", fuzz)
 	if err != nil {
 		return 0
@@ -18,8 +21,49 @@ func FuzzSimple(fuzz []byte) int {
 	return 1
 }
 
-// FuzzStandard tests the JSON parser against the standard library parser.
-func FuzzStandard(fuzz []byte) int {
+// FuzzOptimizedParser tests the parser-optimized JSON parser.
+func FuzzOptimizedParser(fuzz []byte) int {
+	_, err := optimizedParser.Parse("fuzz", fuzz)
+	if err != nil {
+		return 0
+	}
+	return 1
+}
+
+// FuzzOptimizedGrammar tests the grammar-optimized JSON parser.
+func FuzzOptimizedGrammar(fuzz []byte) int {
+	_, err := optimizedGrammar.Parse("fuzz", fuzz)
+	if err != nil {
+		return 0
+	}
+	return 1
+}
+
+// FuzzInternalConsistency tests optimization variants against each other.
+func FuzzInternalConsistency(fuzz []byte) int {
+	unoptimizedResult, unoptimizedErr := Parse("fuzz", fuzz)
+	opParserResult, opParserErr := optimizedParser.Parse("fuzz", fuzz)
+	opGrammarResult, opGrammarErr := optimizedGrammar.Parse("fuzz", fuzz)
+	if !reflect.DeepEqual(unoptimizedResult, opParserResult) {
+		panic("bad parser-optimized result")
+	}
+	if !reflect.DeepEqual(unoptimizedErr, opParserErr) {
+		panic("bad parser-optimized error")
+	}
+	if !reflect.DeepEqual(unoptimizedResult, opGrammarResult) {
+		panic("bad grammar-optimized result")
+	}
+	if !reflect.DeepEqual(unoptimizedErr, opGrammarErr) {
+		panic("bad grammar-optimized error")
+	}
+	if unoptimizedErr != nil {
+		return 0
+	}
+	return 1
+}
+
+// FuzzExternalConsistency tests against the standard library parser.
+func FuzzExternalConsistency(fuzz []byte) int {
 	exclude, err := excludeFuzz(fuzz)
 	if err != nil {
 		panic(err)
