@@ -12,6 +12,8 @@ import (
 	optimizedGrammar "github.com/mna/pigeon/examples/json/optimized-grammar"
 )
 
+var reUTF16Escape = regexp.MustCompile(`\\u[dD][89a-f-AF][0-9a-fA-F]{2}`)
+
 // FuzzUnoptimized tests the unoptimized JSON parser.
 func FuzzUnoptimized(fuzz []byte) int {
 	_, err := Parse("fuzz", fuzz)
@@ -64,11 +66,7 @@ func FuzzInternalConsistency(fuzz []byte) int {
 
 // FuzzExternalConsistency tests against the standard library parser.
 func FuzzExternalConsistency(fuzz []byte) int {
-	exclude, err := excludeFuzz(fuzz)
-	if err != nil {
-		panic(err)
-	}
-	if exclude {
+	if reUTF16Escape.Match(fuzz) {
 		return -1
 	}
 	var expected interface{}
@@ -89,9 +87,4 @@ func FuzzExternalConsistency(fuzz []byte) int {
 		panic("unexpected result")
 	}
 	return 1
-}
-
-func excludeFuzz(fuzz []byte) (exclude bool, err error) {
-	exclude, err = regexp.Match(`\\u[dD][89a-f-AF][0-9a-fA-F]{2}`, fuzz)
-	return
 }
